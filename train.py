@@ -49,8 +49,8 @@ class FactVerificationTransformer(BaseTransformer):
         processor = FactVerificationProcessor()
 
         check_data = (
-            hparams.calculate_consistency_loss
-            if hasattr(hparams, "calculate_consistency_loss")
+            hparams.compute_consistency_reg
+            if hasattr(hparams, "compute_consistency_reg")
             else False
         )
 
@@ -66,25 +66,13 @@ class FactVerificationTransformer(BaseTransformer):
             label_list=processor.get_labels(),
             threads=hparams.num_workers,
             enable_data_augmentation=(
-                hparams.calculate_consistency_loss
-                if hasattr(hparams, "calculate_consistency_loss")
+                hparams.compute_consistency_reg
+                if hasattr(hparams, "compute_consistency_reg")
                 else None
             ),
-            translation_path=(
-                hparams.translation_path
-                if hasattr(hparams, "translation_path")
-                else None
-            ),
-            languages=(hparams.languages if hasattr(hparams, "languages") else None),
         )
 
         num_examples = processor.get_length(filepath)
-        if (
-            hasattr(hparams, "translation_path")
-            and hparams.languages
-            and set_type in ["train", "dev"]
-        ):
-            num_examples *= len(hparams.languages.split("+"))
 
         def empty_tensor_1():
             return torch.empty(num_examples, dtype=torch.long)
@@ -99,8 +87,8 @@ class FactVerificationTransformer(BaseTransformer):
 
         if (
             set_type in ["train", "dev"]
-            and hasattr(hparams, "calculate_consistency_loss")
-            and hparams.calculate_consistency_loss
+            and hasattr(hparams, "compute_consistency_reg")
+            and hparams.compute_consistency_reg
         ):
             input_ids_lang = empty_tensor_2()
             attention_mask_lang = empty_tensor_2()
@@ -116,8 +104,8 @@ class FactVerificationTransformer(BaseTransformer):
 
             if (
                 set_type in ["train", "dev"]
-                and hasattr(hparams, "calculate_consistency_loss")
-                and hparams.calculate_consistency_loss
+                and hasattr(hparams, "compute_consistency_reg")
+                and hparams.compute_consistency_reg
             ):
                 # For other langauges
                 input_ids_lang[i] = torch.tensor(feature["input_ids_lang"])
@@ -132,8 +120,8 @@ class FactVerificationTransformer(BaseTransformer):
 
         if (
             set_type in ["train", "dev"]
-            and hasattr(hparams, "calculate_consistency_loss")
-            and hparams.calculate_consistency_loss
+            and hasattr(hparams, "compute_consistency_reg")
+            and hparams.compute_consistency_reg
         ):
             return [
                 input_ids,
@@ -154,11 +142,7 @@ class FactVerificationTransformer(BaseTransformer):
         feat_dirpath.mkdir(parents=True, exist_ok=True)
         pt = self.hparams.pretrained_model_name.replace("/", "__")
         return (
-            feat_dirpath / f"cached_{mode}_{pt}_{self.hparams.languages}_"
-            f"{self.hparams.lambda_ori}_{self.hparams.lambda_lang}_"
-            f"{self.hparams.consistency_loss_func1}_{self.hparams.lambda_consistency1}_"
-            f"{self.hparams.consistency_loss_func2}_{self.hparams.lambda_consistency2}_"
-            f"{self.hparams.seed}"
+            feat_dirpath / f"cached_{mode}_{pt}_{self.model_name}_{self.hparams.seed}"
         )
 
     def prepare_data(self):
@@ -233,8 +217,8 @@ class FactVerificationTransformer(BaseTransformer):
                 else None
             )
         if (
-            hasattr(self.hparams, "calculate_consistency_loss")
-            and self.hparams.calculate_consistency_loss
+            hasattr(self.hparams, "compute_consistency_reg")
+            and self.hparams.compute_consistency_reg
             and len(batch) > 4
         ):
             inputs["input_ids_lang"] = batch[4]
@@ -246,19 +230,15 @@ class FactVerificationTransformer(BaseTransformer):
                     else None
                 )
         if (
-            hasattr(self.hparams, "consistency_loss_func1")
-            and self.hparams.consistency_loss_func1
+            hasattr(self.hparams, "consistency_reg_func1")
+            and self.hparams.consistency_reg_func1
         ):
-            inputs["consistency_loss_func1"] = self.hparams.consistency_loss_func1
+            inputs["consistency_reg_func1"] = self.hparams.consistency_reg_func1
         if (
-            hasattr(self.hparams, "consistency_loss_func2")
-            and self.hparams.consistency_loss_func2
+            hasattr(self.hparams, "consistency_reg_func2")
+            and self.hparams.consistency_reg_func2
         ):
-            inputs["consistency_loss_func2"] = self.hparams.consistency_loss_func2
-        if hasattr(self.hparams, "lambda_ori") and self.hparams.lambda_ori:
-            inputs["lambda_ori"] = self.hparams.lambda_ori
-        if hasattr(self.hparams, "lambda_lang") and self.hparams.lambda_lang:
-            inputs["lambda_lang"] = self.hparams.lambda_lang
+            inputs["consistency_reg_func2"] = self.hparams.consistency_reg_func2
         if (
             hasattr(self.hparams, "lambda_consistency1")
             and self.hparams.lambda_consistency1
@@ -281,14 +261,10 @@ class FactVerificationTransformer(BaseTransformer):
             log_dict["train_loss_en"] = outputs.loss_en.detach().cpu()
         if outputs.loss_lang:
             log_dict["train_loss_lang"] = outputs.loss_lang.detach().cpu()
-        if outputs.loss_consistency1:
-            log_dict[
-                "train_loss_consistency1"
-            ] = outputs.loss_consistency1.detach().cpu()
-        if outputs.loss_consistency2:
-            log_dict[
-                "train_loss_consistency2"
-            ] = outputs.loss_consistency2.detach().cpu()
+        if outputs.reg_consistency1:
+            log_dict["train_reg_consistency1"] = outputs.reg_consistency1.detach().cpu()
+        if outputs.reg_consistency2:
+            log_dict["train_reg_consistency2"] = outputs.reg_consistency2.detach().cpu()
         self.log_dict(log_dict)
         return outputs.loss
 
