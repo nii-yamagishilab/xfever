@@ -65,8 +65,6 @@ class FactVerificationTransformer(BaseTransformer):
             max_length=hparams.max_seq_length,
             label_list=processor.get_labels(),
             threads=hparams.num_workers,
-            # code_switch_languages=hparams.code_switch_languages,
-            # bilingual_dicts_path=hparams.bilingual_dicts_path,
             enable_data_augmentation=(
                 hparams.calculate_consistency_loss
                 if hasattr(hparams, "calculate_consistency_loss")

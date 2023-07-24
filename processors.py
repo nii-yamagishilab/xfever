@@ -2,14 +2,12 @@
 # Authors: Yi-Chen Chang (yichen@nlplab.cc), Canasai Kruengkrai (canasai@nii.ac.jp)
 # All rights reserved.
 
-import os
 import io
 import jsonlines
 import re
 import unicodedata
 import numpy as np
-import random
-from transformers import InputExample, DataProcessor  # , InputFeatures
+from transformers import InputExample, DataProcessor
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
@@ -17,35 +15,11 @@ from tqdm import tqdm
 tokenizer = None
 
 
-def do_code_switch(text, code_switch_languages, bilingual_dict):
-    tokens = text.split(" ")
-    num_tokens = len(tokens)
-    num_switched_tokens = 0
-    new_tokens = []
-    for token in tokens:
-        if (
-            random.uniform(0, 1) > 0.5
-            and (num_switched_tokens / num_tokens) <= 0.3
-            and token.lower() in bilingual_dict["ja"]
-        ):
-            new_token = bilingual_dict["ja"][token.lower()][
-                random.randint(0, len(bilingual_dict["ja"][token.lower()]) - 1)
-            ]
-            new_tokens.append(new_token)
-            num_switched_tokens += 1
-        else:
-            new_tokens.append(token)
-
-    return " ".join(new_tokens)
-
-
 def convert_example_to_features(
     example,
     max_length,
     label_map,
     set_type,
-    code_switch_languages,
-    bilingual_dict,
     enable_data_augmentation,
     translate_dict,
     languages,
@@ -53,12 +27,8 @@ def convert_example_to_features(
     if max_length is None:
         max_length = tokenizer.max_len
 
-    if code_switch_languages:
-        text_a = do_code_switch(example.text_a, code_switch_languages, bilingual_dict)
-        text_b = do_code_switch(example.text_b, code_switch_languages, bilingual_dict)
-    else:
-        text_a = example.text_a
-        text_b = example.text_b
+    text_a = example.text_a
+    text_b = example.text_b
 
     if set_type in ["train", "dev"] and enable_data_augmentation:
 
@@ -117,8 +87,6 @@ def convert_examples_to_features(
     max_length=None,
     label_list=None,
     threads=8,
-    code_switch_languages="",
-    bilingual_dicts_path=None,
     enable_data_augmentation=False,
     translation_path=None,
     languages="",
@@ -132,39 +100,7 @@ def convert_examples_to_features(
 
     features = []
 
-    bilingual_dict = {}
-    if code_switch_languages:
-
-        assert bilingual_dicts_path is not None
-
-        cs_langs = code_switch_languages.split("+")
-        for lang in cs_langs:
-            with open(
-                os.path.join(bilingual_dicts_path, f"en-{lang}.txt"),
-                "r",
-                encoding="utf-8",
-            ) as reader:
-                raw = reader.readlines()
-            bilingual_dict[lang] = {}
-            for line in raw:
-                line = line.strip()
-                try:
-                    token_en, token_lang = line.split("\t")
-                except ValueError:
-                    token_en, token_lang = line.split(" ")
-                if token_en not in bilingual_dict[lang]:
-                    bilingual_dict[lang][token_en] = [token_lang]
-                else:
-                    bilingual_dict[lang][token_en].append(token_lang)
-
     translate_dict = None
-
-    # if set_type in ["train", "dev"] and enable_data_augmentation:
-
-    #     with open(
-    #         os.path.join(translation_path, f"translate-{set_type}-dict.json"), "r"
-    #     ) as file:
-    #         translate_dict = json.load(file)
 
     threads = min(threads, cpu_count())
     with Pool(
@@ -175,8 +111,6 @@ def convert_examples_to_features(
             max_length=max_length,
             label_map=label_map,
             set_type=set_type,
-            code_switch_languages=code_switch_languages,
-            bilingual_dict=bilingual_dict,
             enable_data_augmentation=enable_data_augmentation,
             translate_dict=translate_dict,
             languages=languages,

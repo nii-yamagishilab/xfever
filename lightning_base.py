@@ -194,8 +194,6 @@ class BaseTransformer(pl.LightningModule):
         parser.add_argument("--patience", type=int, default=2)
         parser.add_argument("--skip_validation", action="store_true")
         parser.add_argument("--freeze", nargs="+", default=[])
-        parser.add_argument("--code_switch_languages", type=str)
-        parser.add_argument("--bilingual_dicts_path", type=str)
         parser.add_argument("--calculate_consistency_loss", action="store_true")
         parser.add_argument("--translation_path", type=str)
         parser.add_argument("--languages", type=str)
