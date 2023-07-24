@@ -203,7 +203,6 @@ class BaseTransformer(pl.LightningModule):
         parser.add_argument("--lambda_lang", type=float, default=0.0)
         parser.add_argument("--lambda_consistency1", type=float, default=0.0)
         parser.add_argument("--lambda_consistency2", type=float, default=0.0)
-        parser.add_argument("--lambda_correlation", type=float, default=0.0)
 
 
 def generic_train(model, args, callbacks):

@@ -130,12 +130,6 @@ class FactVerificationTransformer(BaseTransformer):
                         feature["token_type_ids_lang"]
                     )
 
-            # input_ids[i] = torch.tensor(feature.input_ids)
-            # attention_mask[i] = torch.tensor(feature.attention_mask)
-            # if feature.token_type_ids is not None:
-            #     token_type_ids[i] = torch.tensor(feature.token_type_ids)
-            # labels[i] = torch.tensor(feature.label)
-
         if (
             set_type in ["train", "dev"]
             and hasattr(hparams, "calculate_consistency_loss")
@@ -159,16 +153,12 @@ class FactVerificationTransformer(BaseTransformer):
         feat_dirpath = Path(self.hparams.cache_dir) / dirname
         feat_dirpath.mkdir(parents=True, exist_ok=True)
         pt = self.hparams.pretrained_model_name.replace("/", "__")
-        # return (
-        #     feat_dirpath
-        #     / f"cached_{mode}_{pt}_{self.hparams.max_seq_length}_{self.hparams.seed}"
-        # )
         return (
             feat_dirpath / f"cached_{mode}_{pt}_{self.hparams.languages}_"
             f"{self.hparams.lambda_ori}_{self.hparams.lambda_lang}_"
             f"{self.hparams.consistency_loss_func1}_{self.hparams.lambda_consistency1}_"
             f"{self.hparams.consistency_loss_func2}_{self.hparams.lambda_consistency2}_"
-            f"{self.hparams.lambda_correlation}_{self.hparams.seed}"
+            f"{self.hparams.seed}"
         )
 
     def prepare_data(self):
@@ -279,12 +269,6 @@ class FactVerificationTransformer(BaseTransformer):
             and self.hparams.lambda_consistency2
         ):
             inputs["lambda_consistency2"] = self.hparams.lambda_consistency2
-        if (
-            hasattr(self.hparams, "lambda_correlation")
-            and self.hparams.lambda_correlation
-        ):
-            inputs["lambda_correlation"] = self.hparams.lambda_correlation
-
         return inputs
 
     def base_training_step(self, inputs, batch_idx):
@@ -305,10 +289,6 @@ class FactVerificationTransformer(BaseTransformer):
             log_dict[
                 "train_loss_consistency2"
             ] = outputs.loss_consistency2.detach().cpu()
-        if outputs.loss_correlation:
-            log_dict["train_loss_correlation"] = outputs.loss_correlation.detach().cpu()
-        if outputs.correlation:
-            log_dict["train_correlation"] = outputs.correlation.detach().cpu()
         self.log_dict(log_dict)
         return outputs.loss
 

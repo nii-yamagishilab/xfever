@@ -4,7 +4,6 @@
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.nn import CrossEntropyLoss
 from transformers import AutoConfig, AutoModel
 from transformers.modeling_utils import PreTrainedModel
@@ -28,8 +27,6 @@ class BaseModelOutput(ModelOutput):
     loss_lang: torch.FloatTensor = None
     loss_consistency1: torch.FloatTensor = None
     loss_consistency2: torch.FloatTensor = None
-    loss_correlation: torch.FloatTensor = None
-    correlation: torch.FloatTensor = None
     logits: torch.FloatTensor = None
     penultimate_layer: torch.FloatTensor = None
 
@@ -146,7 +143,6 @@ class ConsistencyModel(PreTrainedModel):
         loss_lang = None
         loss_consistency1 = None
         loss_consistency2 = None
-        correlation = None
         if input_ids_lang is not None:
             encoder_outputs_lang = model(input_ids_lang, **valid_kwargs)
             features_lang = encoder_outputs_lang.last_hidden_state[
@@ -164,18 +160,6 @@ class ConsistencyModel(PreTrainedModel):
                 )
 
                 loss += loss_lang
-
-                correlations = []
-                for item in torch.eq(
-                    torch.argmax(F.softmax(logits, dim=-1), dim=-1),
-                    torch.argmax(F.softmax(logits_lang, dim=-1), dim=-1),
-                ).tolist():
-                    if item:
-                        correlations.append(1)
-                    else:
-                        correlations.append(0)
-
-                correlation = torch.tensor(sum(correlations) / len(correlations))
 
             if consistency_loss_func1 and consistency_loss_func1 in [
                 "KLDiv",
@@ -265,7 +249,6 @@ class ConsistencyModel(PreTrainedModel):
             loss_lang=loss_lang,
             loss_consistency1=loss_consistency1,
             loss_consistency2=loss_consistency2,
-            correlation=correlation,
             logits=logits,
             penultimate_layer=penultimate_layer,
         )
