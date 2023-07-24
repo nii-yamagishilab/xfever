@@ -21,8 +21,6 @@ def convert_example_to_features(
     label_map,
     set_type,
     enable_data_augmentation,
-    translate_dict,
-    languages,
 ):
     if max_length is None:
         max_length = tokenizer.max_len
@@ -31,11 +29,9 @@ def convert_example_to_features(
     text_b = example.text_b
 
     if set_type in ["train", "dev"] and enable_data_augmentation:
-
         text_a, translated_text_a = text_a.split("[SEP]")
         text_b, translated_text_b = text_b.split("[SEP]")
 
-        # dict_keys(['input_ids', 'token_type_ids', 'attention_mask'])
         inputs = tokenizer.encode_plus(
             text_a,
             text_b,
@@ -60,7 +56,6 @@ def convert_example_to_features(
             inputs["token_type_ids_lang"] = translated_inputs["token_type_ids"]
 
     else:
-        # dict_keys(['input_ids', 'token_type_ids', 'attention_mask'])
         inputs = tokenizer.encode_plus(
             text_a,
             text_b,
@@ -88,8 +83,6 @@ def convert_examples_to_features(
     label_list=None,
     threads=8,
     enable_data_augmentation=False,
-    translation_path=None,
-    languages="",
 ):
 
     if label_list is None:
@@ -99,8 +92,6 @@ def convert_examples_to_features(
     label_map = {label: i for i, label in enumerate(label_list)}
 
     features = []
-
-    translate_dict = None
 
     threads = min(threads, cpu_count())
     with Pool(
@@ -112,8 +103,6 @@ def convert_examples_to_features(
             label_map=label_map,
             set_type=set_type,
             enable_data_augmentation=enable_data_augmentation,
-            translate_dict=translate_dict,
-            languages=languages,
         )
         features = list(
             tqdm(
@@ -215,7 +204,6 @@ class FactVerificationProcessor(DataProcessor):
             if check_data:
                 if "[SEP]" not in text_a or "[SEP]" not in text_b:
                     count += 1
-                    # continue
 
             examples.append(
                 InputExample(

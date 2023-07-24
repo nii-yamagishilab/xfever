@@ -2,112 +2,42 @@
 # Authors: Yi-Chen Chang (yichen@nlplab.cc), Canasai Kruengkrai (canasai@nii.ac.jp)
 # All rights reserved.
 
-import math
 import torch
 
-from torch.nn import functional as F, CosineSimilarity, MSELoss
+from torch.nn import functional as F
 
 
-def KL(logits1, logits2, num_labels=3):
-
+def kl(logits1, logits2, num_labels=3):
     prob1_log = F.log_softmax(logits1, dim=-1)
     prob2 = F.softmax(logits2, dim=-1)
-
     return F.kl_div(prob1_log, prob2, reduction="batchmean")
 
 
-def KLDiv_detach(logits1, logits2, num_labels=3):
-
-    return KL(
-        logits2.view(-1, num_labels),
-        logits1.view(-1, num_labels).detach(),
-    )
-
-
-def symmetric_KLDiv(logits1, logits2, num_labels=3):
-
-    consistency_loss_f = KL(
-        logits2.view(-1, num_labels),
-        logits1.view(-1, num_labels),
-    )
-    consistency_loss_b = KL(
+def j(logits1, logits2, num_labels=3):
+    return kl(logits2.view(-1, num_labels), logits1.view(-1, num_labels),) + kl(
         logits1.view(-1, num_labels),
         logits2.view(-1, num_labels),
     )
-    loss_consistency = consistency_loss_b + consistency_loss_f
-
-    return loss_consistency
 
 
-def symmetric_KLDiv_detach(logits1, logits2, num_labels=3):
-
-    consistency_loss_f = KL(
-        logits2.view(-1, num_labels),
-        logits1.view(-1, num_labels).detach(),
-    )
-    consistency_loss_b = KL(
-        logits1.view(-1, num_labels),
-        logits2.view(-1, num_labels).detach(),
-    )
-    loss_consistency = consistency_loss_b + consistency_loss_f
-
-    return loss_consistency
-
-
-def symmetric_cross_entropy(logits1, logits2, num_labels=3):
-
-    consistency_loss_f = F.cross_entropy(
-        logits2.view(-1, num_labels),
-        F.softmax(logits1.view(-1, num_labels), dim=-1),
-    )
-    consistency_loss_b = F.cross_entropy(
-        logits1.view(-1, num_labels),
-        F.softmax(logits2.view(-1, num_labels), dim=-1),
-    )
-    loss_consistency = consistency_loss_b + consistency_loss_f
-
-    return loss_consistency
-
-
-def JSDiv(logits1, logits2, num_labels=3):
-
+def js(logits1, logits2, num_labels=3):
     prob1 = F.softmax(logits1, dim=-1)
     prob2 = F.softmax(logits2, dim=-1)
-
-    M = 0.5 * (prob1 + prob2)
-
-    KL_PM = KL(
-        M.view(-1, num_labels),
+    m = 0.5 * (prob1 + prob2)
+    kl_pm = kl(
+        m.view(-1, num_labels),
         logits1.view(-1, num_labels),
     )
-    KL_QM = KL(
-        M.view(-1, num_labels),
+    kl_qm = kl(
+        m.view(-1, num_labels),
         logits2.view(-1, num_labels),
     )
-
-    return 0.5 * (KL_PM + KL_QM)
-
-
-def JSDis(logits1, logits2, num_labels=3):
-
-    JSDiv_score = JSDiv(logits1, logits2, num_labels)
-
-    return math.sqrt(JSDiv_score)
+    return 0.5 * (kl_pm + kl_qm)
 
 
-def CosSimilarityLoss(inputs1, inputs2):
-
-    cos = CosineSimilarity()
-    cos_sim = cos(inputs1, inputs2)
-    neg_cos_sim = 1 - cos_sim
-    neg_cos_sim_loss = torch.mean(neg_cos_sim)
-
-    return neg_cos_sim_loss
+def mse(inputs1, inputs2):
+    return F.mse_loss(inputs1, inputs2)
 
 
-def EuclideanDistance(inputs1, inputs2):
-
-    mse_loss_fct = MSELoss(reduction="mean")
-    distance = mse_loss_fct(inputs1, inputs2)
-
-    return distance
+def cos(inputs1, inputs2):
+    return torch.mean(1.0 - F.cosine_similarity(inputs1, inputs2))

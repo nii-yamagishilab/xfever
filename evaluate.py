@@ -111,15 +111,10 @@ def main():
         * 100.0
     )
 
-    # Accuracy
     acc = accuracy_score(gold_labels, pred_labels) * 100.0
-
-    # Confusion Matrix
     mat = confusion_matrix(gold_labels, pred_labels, labels=labels)
     df = pd.DataFrame(mat, columns=labels, index=labels)
     df2 = pd.DataFrame([prec, rec, f1], columns=labels, index=["Prec:", "Rec:", "F1:"])
-
-    # ECE Score
     y_test = read_gold_labels(args.gold_file)
     ece = ece_score(pred_probs, y_test, args.n_bins)
 

@@ -50,9 +50,6 @@ def main():
     params = {}
     params["precision"] = model.hparams.precision
 
-    # trainer = pl.Trainer.from_argparse_args(
-    #     args, logger=False, checkpoint_callback=False, **params
-    # )
     trainer = pl.Trainer.from_argparse_args(args, logger=False, **params)
 
     t_start = datetime.now()

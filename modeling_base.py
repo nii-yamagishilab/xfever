@@ -4,32 +4,33 @@
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.nn import CrossEntropyLoss
 from transformers import AutoConfig, AutoModel
 from transformers.modeling_utils import PreTrainedModel
 from transformers.file_utils import ModelOutput
 from utils import (
-    KL,
-    KLDiv_detach,
-    symmetric_KLDiv,
-    symmetric_KLDiv_detach,
-    symmetric_cross_entropy,
-    JSDiv,
-    JSDis,
-    CosSimilarityLoss,
-    EuclideanDistance,
+    kl,
+    j,
+    js,
+    mse,
+    cos,
 )
+
+REG_FCT = {
+    "kl": kl,
+    "j": j,
+    "js": js,
+    "mse": mse,
+    "cos": cos,
+}
 
 
 class BaseModelOutput(ModelOutput):
     loss: torch.FloatTensor = None
     loss_en: torch.FloatTensor = None
     loss_lang: torch.FloatTensor = None
-    loss_consistency1: torch.FloatTensor = None
-    loss_consistency2: torch.FloatTensor = None
-    loss_correlation: torch.FloatTensor = None
-    correlation: torch.FloatTensor = None
+    reg_consistency1: torch.FloatTensor = None
+    reg_consistency2: torch.FloatTensor = None
     logits: torch.FloatTensor = None
     penultimate_layer: torch.FloatTensor = None
 
@@ -116,10 +117,8 @@ class ConsistencyModel(PreTrainedModel):
         input_ids,
         input_ids_lang=None,
         labels=None,
-        consistency_loss_func1=None,
-        consistency_loss_func2=None,
-        lambda_ori=0.0,
-        lambda_lang=0.0,
+        consistency_reg_func1=None,
+        consistency_reg_func2=None,
         lambda_consistency1=0.0,
         lambda_consistency2=0.0,
         **kwargs,
@@ -133,20 +132,15 @@ class ConsistencyModel(PreTrainedModel):
         features = encoder_outputs.last_hidden_state[:, 0]  # equiv. to [CLS]
         logits, penultimate_layer = self.classifier(features)
 
-        # Original Loss
         loss = None
         if labels is not None:
             loss_fct = CrossEntropyLoss()
-            loss_en = (
-                loss_fct(logits.view(-1, self.config.num_labels), labels.view(-1))
-                * lambda_ori
-            )
+            loss_en = loss_fct(logits.view(-1, self.config.num_labels), labels.view(-1))
             loss = loss_en
 
         loss_lang = None
-        loss_consistency1 = None
-        loss_consistency2 = None
-        correlation = None
+        reg_consistency1 = None
+        reg_consistency2 = None
         if input_ids_lang is not None:
             encoder_outputs_lang = model(input_ids_lang, **valid_kwargs)
             features_lang = encoder_outputs_lang.last_hidden_state[
@@ -156,116 +150,37 @@ class ConsistencyModel(PreTrainedModel):
 
             if labels is not None:
                 loss_fct_lang = CrossEntropyLoss()
-                loss_lang = (
-                    loss_fct_lang(
-                        logits_lang.view(-1, self.config.num_labels), labels.view(-1)
-                    )
-                    * lambda_lang
+                loss_lang = loss_fct_lang(
+                    logits_lang.view(-1, self.config.num_labels), labels.view(-1)
                 )
-
                 loss += loss_lang
 
-                correlations = []
-                for item in torch.eq(
-                    torch.argmax(F.softmax(logits, dim=-1), dim=-1),
-                    torch.argmax(F.softmax(logits_lang, dim=-1), dim=-1),
-                ).tolist():
-                    if item:
-                        correlations.append(1)
-                    else:
-                        correlations.append(0)
+            if consistency_reg_func1:
+                reg_consistency1 = lambda_consistency1 * REG_FCT[consistency_reg_func1](
+                    logits, logits_lang, self.config.num_labels
+                )
+                loss += reg_consistency1
 
-                correlation = torch.tensor(sum(correlations) / len(correlations))
+            if consistency_reg_func2:
+                func, layer = consistency_reg_func2.split("_")
+                if layer == "feat":
+                    layer = features
+                    layer_lang = features_lang
+                else:
+                    layer = penultimate_layer
+                    layer_lang = penultimate_layer_lang
 
-            if consistency_loss_func1 and consistency_loss_func1 in [
-                "KLDiv",
-                "KLDiv-reverse",
-                "KLDiv-reverse-detach",
-                "KLDiv-reverse-detach-2X",
-                "symKLDiv",
-                "symKLDiv-detach",
-                "symCE",
-                "JSDiv",
-                "JSDis",
-            ]:
-
-                if consistency_loss_func1 == "KLDiv":
-                    loss_consistency1 = KL(logits, logits_lang, self.config.num_labels)
-
-                elif consistency_loss_func1 == "KLDiv-reverse":
-                    loss_consistency1 = KL(logits_lang, logits, self.config.num_labels)
-
-                elif consistency_loss_func1 == "KLDiv-reverse-detach":
-                    loss_consistency1 = KLDiv_detach(
-                        logits_lang, logits, self.config.num_labels
-                    )
-
-                elif consistency_loss_func1 == "KLDiv-reverse-detach-2X":
-                    loss_consistency1 = 2 * KLDiv_detach(
-                        logits_lang, logits, self.config.num_labels
-                    )
-
-                elif consistency_loss_func1 == "symKLDiv":
-                    loss_consistency1 = symmetric_KLDiv(
-                        logits, logits_lang, self.config.num_labels
-                    )
-
-                elif consistency_loss_func1 == "symKLDiv-detach":
-                    loss_consistency1 = symmetric_KLDiv_detach(
-                        logits, logits_lang, self.config.num_labels
-                    )
-
-                elif consistency_loss_func1 == "symCE":
-                    loss_consistency1 = symmetric_cross_entropy(
-                        logits, logits_lang, self.config.num_labels
-                    )
-
-                elif consistency_loss_func1 == "JSDiv":
-                    loss_consistency1 = JSDiv(
-                        logits, logits_lang, self.config.num_labels
-                    )
-
-                elif consistency_loss_func1 == "JSDis":
-                    loss_consistency1 = JSDis(
-                        logits, logits_lang, self.config.num_labels
-                    )
-
-                loss_consistency1 *= lambda_consistency1
-                loss += loss_consistency1
-
-            if consistency_loss_func2 and consistency_loss_func2.split("_")[0] in [
-                "NegCosSim",
-                "EuclideanDis",
-            ]:
-
-                if consistency_loss_func2.split("_")[0] == "NegCosSim":
-                    if consistency_loss_func2.split("_")[-1] == "features":
-                        loss_consistency2 = CosSimilarityLoss(features, features_lang)
-
-                    elif consistency_loss_func2.split("_")[-1] == "penultimate-layer":
-                        loss_consistency2 = CosSimilarityLoss(
-                            penultimate_layer, penultimate_layer_lang
-                        )
-
-                elif consistency_loss_func2.split("_")[0] == "EuclideanDis":
-                    if consistency_loss_func2.split("_")[-1] == "features":
-                        loss_consistency2 = EuclideanDistance(features, features_lang)
-
-                    elif consistency_loss_func2.split("_")[-1] == "penultimate-layer":
-                        loss_consistency2 = EuclideanDistance(
-                            penultimate_layer, penultimate_layer_lang
-                        )
-
-                loss_consistency2 *= lambda_consistency2
-                loss += loss_consistency2
+                reg_consistency2 = lambda_consistency2 * REG_FCT[consistency_reg_func2](
+                    layer, layer_lang
+                )
+                loss += reg_consistency2
 
         return BaseModelOutput(
             loss=loss,
             loss_en=loss_en,
             loss_lang=loss_lang,
-            loss_consistency1=loss_consistency1,
-            loss_consistency2=loss_consistency2,
-            correlation=correlation,
+            reg_consistency1=reg_consistency1,
+            reg_consistency2=reg_consistency2,
             logits=logits,
             penultimate_layer=penultimate_layer,
         )
