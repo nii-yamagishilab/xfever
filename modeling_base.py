@@ -10,9 +10,7 @@ from transformers.modeling_utils import PreTrainedModel
 from transformers.file_utils import ModelOutput
 from utils import (
     KL,
-    KLDiv_detach,
     symmetric_KLDiv,
-    symmetric_KLDiv_detach,
     symmetric_cross_entropy,
     JSDiv,
     JSDis,
@@ -164,10 +162,7 @@ class ConsistencyModel(PreTrainedModel):
             if consistency_loss_func1 and consistency_loss_func1 in [
                 "KLDiv",
                 "KLDiv-reverse",
-                "KLDiv-reverse-detach",
-                "KLDiv-reverse-detach-2X",
                 "symKLDiv",
-                "symKLDiv-detach",
                 "symCE",
                 "JSDiv",
                 "JSDis",
@@ -175,40 +170,20 @@ class ConsistencyModel(PreTrainedModel):
 
                 if consistency_loss_func1 == "KLDiv":
                     loss_consistency1 = KL(logits, logits_lang, self.config.num_labels)
-
                 elif consistency_loss_func1 == "KLDiv-reverse":
                     loss_consistency1 = KL(logits_lang, logits, self.config.num_labels)
-
-                elif consistency_loss_func1 == "KLDiv-reverse-detach":
-                    loss_consistency1 = KLDiv_detach(
-                        logits_lang, logits, self.config.num_labels
-                    )
-
-                elif consistency_loss_func1 == "KLDiv-reverse-detach-2X":
-                    loss_consistency1 = 2 * KLDiv_detach(
-                        logits_lang, logits, self.config.num_labels
-                    )
-
                 elif consistency_loss_func1 == "symKLDiv":
                     loss_consistency1 = symmetric_KLDiv(
                         logits, logits_lang, self.config.num_labels
                     )
-
-                elif consistency_loss_func1 == "symKLDiv-detach":
-                    loss_consistency1 = symmetric_KLDiv_detach(
-                        logits, logits_lang, self.config.num_labels
-                    )
-
                 elif consistency_loss_func1 == "symCE":
                     loss_consistency1 = symmetric_cross_entropy(
                         logits, logits_lang, self.config.num_labels
                     )
-
                 elif consistency_loss_func1 == "JSDiv":
                     loss_consistency1 = JSDiv(
                         logits, logits_lang, self.config.num_labels
                     )
-
                 elif consistency_loss_func1 == "JSDis":
                     loss_consistency1 = JSDis(
                         logits, logits_lang, self.config.num_labels

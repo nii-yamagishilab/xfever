@@ -16,14 +16,6 @@ def KL(logits1, logits2, num_labels=3):
     return F.kl_div(prob1_log, prob2, reduction="batchmean")
 
 
-def KLDiv_detach(logits1, logits2, num_labels=3):
-
-    return KL(
-        logits2.view(-1, num_labels),
-        logits1.view(-1, num_labels).detach(),
-    )
-
-
 def symmetric_KLDiv(logits1, logits2, num_labels=3):
 
     consistency_loss_f = KL(
@@ -33,21 +25,6 @@ def symmetric_KLDiv(logits1, logits2, num_labels=3):
     consistency_loss_b = KL(
         logits1.view(-1, num_labels),
         logits2.view(-1, num_labels),
-    )
-    loss_consistency = consistency_loss_b + consistency_loss_f
-
-    return loss_consistency
-
-
-def symmetric_KLDiv_detach(logits1, logits2, num_labels=3):
-
-    consistency_loss_f = KL(
-        logits2.view(-1, num_labels),
-        logits1.view(-1, num_labels).detach(),
-    )
-    consistency_loss_b = KL(
-        logits1.view(-1, num_labels),
-        logits2.view(-1, num_labels).detach(),
     )
     loss_consistency = consistency_loss_b + consistency_loss_f
 
