@@ -27,8 +27,12 @@ done
 wc -l {en,es,fr,id,ja,zh}/*.jsonl
 wc -l toy/{en,es,fr,id,ja,zh}/*.jsonl
 
-python build_mixed_examples.py --dirpath .
-python build_parallel_examples.py --dirpath .
+if [[ ! -d 'mixed' ]]; then
+  python build_mixed_examples.py --dirpath .
+  python build_mixed_examples.py --dirpath toy
+fi
 
-python build_mixed_examples.py --dirpath toy
-python build_parallel_examples.py --dirpath toy
+if [[ ! -d 'para' ]]; then
+  python build_parallel_examples.py --dirpath .
+  python build_parallel_examples.py --dirpath toy
+fi
