@@ -142,7 +142,8 @@ class FactVerificationTransformer(BaseTransformer):
         feat_dirpath.mkdir(parents=True, exist_ok=True)
         pt = self.hparams.pretrained_model_name.replace("/", "__")
         return (
-            feat_dirpath / f"cached_{mode}_{pt}_{self.model_name}_{self.hparams.seed}"
+            feat_dirpath
+            / f"cached_{mode}_{pt}_{self.hparams.model_name}_{self.hparams.seed}"
         )
 
     def prepare_data(self):
