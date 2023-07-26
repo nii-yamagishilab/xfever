@@ -1,13 +1,7 @@
 import copy
 import fire
-import jsonlines
 from pathlib import Path
-
-
-def read_file(filepath):
-    with jsonlines.open(filepath) as f:
-        lines = [line for line in f]
-    return lines
+from build_mixed_examples import read_file, save
 
 
 def concat_inputs(lines_en, lines_lang):
@@ -24,18 +18,12 @@ def main(dirpath: str):
     splits = ["train", "dev", "test"]
     langs = ["en", "es", "fr", "id", "ja", "zh"]
     for split in splits:
-        print(f"{split}")
         lines_final = []
         lines_en = read_file(dirpath / langs[0] / f"{split}.jsonl")
         for lang in langs[1:]:
             lines_lang = read_file(dirpath / lang / f"{split}.jsonl")
             lines_final.extend(concat_inputs(lines_en, lines_lang))
-
-        out_dirpath = dirpath / "parallel"
-        out_dirpath.mkdir(parents=True, exist_ok=True)
-        with jsonlines.open(out_dirpath / f"{split}.jsonl", "w") as f:
-            f.write_all(lines_final)
-        print("--")
+        save(dirpath / "parallel", split, lines_final)
 
 
 if __name__ == "__main__":
