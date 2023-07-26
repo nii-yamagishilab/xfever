@@ -23,7 +23,7 @@ def main(dirpath: str):
         for lang in langs[1:]:
             lines_lang = read_file(dirpath / lang / f"{split}.jsonl")
             lines_final.extend(concat_inputs(lines_en, lines_lang))
-        save(dirpath / "parallel", split, lines_final)
+        save(dirpath / "para", split, lines_final)
 
 
 if __name__ == "__main__":
