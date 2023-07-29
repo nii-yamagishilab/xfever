@@ -194,7 +194,6 @@ class BaseTransformer(pl.LightningModule):
         parser.add_argument("--patience", type=int, default=2)
         parser.add_argument("--skip_validation", action="store_true")
         parser.add_argument("--freeze", nargs="+", default=[])
-        parser.add_argument("--compute_consistency_reg", action="store_true")
         parser.add_argument("--consistency_reg_func1", type=str)
         parser.add_argument("--consistency_reg_func2", type=str)
         parser.add_argument("--lambda_consistency1", type=float, default=0.0)

@@ -156,24 +156,23 @@ class ConsistencyModel(PreTrainedModel):
                 loss += loss_lang
 
             if consistency_reg_func1:
-                reg_consistency1 = lambda_consistency1 * REG_FCT[consistency_reg_func1](
+                reg_consistency1 = REG_FCT[consistency_reg_func1](
                     logits, logits_lang, self.config.num_labels
                 )
-                loss += reg_consistency1
+                loss += lambda_consistency1 * reg_consistency1
 
             if consistency_reg_func2:
-                func, layer = consistency_reg_func2.split("_")
+                func, layer = consistency_reg_func2.split("-")
                 if layer == "feat":
                     layer = features
                     layer_lang = features_lang
-                else:
+                elif layer == "penu":
                     layer = penultimate_layer
                     layer_lang = penultimate_layer_lang
-
-                reg_consistency2 = lambda_consistency2 * REG_FCT[consistency_reg_func2](
-                    layer, layer_lang
-                )
-                loss += reg_consistency2
+                else:
+                    raise KeyError(layer)
+                reg_consistency2 = REG_FCT[func](layer, layer_lang)
+                loss += lambda_consistency2 * reg_consistency2
 
         return BaseModelOutput(
             loss=loss,
