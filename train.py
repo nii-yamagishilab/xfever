@@ -48,11 +48,7 @@ class FactVerificationTransformer(BaseTransformer):
         hparams = self.hparams
         processor = FactVerificationProcessor()
 
-        check_data = (
-            hparams.compute_consistency_reg
-            if hasattr(hparams, "compute_consistency_reg")
-            else False
-        )
+        check_data = True if hparams.model_name == "consistency" else False
 
         examples = processor.get_examples(
             filepath, set_type, check_data, self.training, hparams.use_title
@@ -66,9 +62,7 @@ class FactVerificationTransformer(BaseTransformer):
             label_list=processor.get_labels(),
             threads=hparams.num_workers,
             enable_data_augmentation=(
-                hparams.compute_consistency_reg
-                if hasattr(hparams, "compute_consistency_reg")
-                else None
+                True if hparams.model_name == "consistency" else False
             ),
         )
 
@@ -85,11 +79,7 @@ class FactVerificationTransformer(BaseTransformer):
         token_type_ids = empty_tensor_2()
         labels = empty_tensor_1()
 
-        if (
-            set_type in ["train", "dev"]
-            and hasattr(hparams, "compute_consistency_reg")
-            and hparams.compute_consistency_reg
-        ):
+        if set_type in ["train", "dev"] and hparams.model_name == "consistency":
             input_ids_lang = empty_tensor_2()
             attention_mask_lang = empty_tensor_2()
             token_type_ids_lang = empty_tensor_2()
@@ -102,12 +92,8 @@ class FactVerificationTransformer(BaseTransformer):
                 token_type_ids[i] = torch.tensor(feature["token_type_ids"])
             labels[i] = torch.tensor(feature["label"])
 
-            if (
-                set_type in ["train", "dev"]
-                and hasattr(hparams, "compute_consistency_reg")
-                and hparams.compute_consistency_reg
-            ):
-                # For other langauges
+            if set_type in ["train", "dev"] and hparams.model_name == "consistency":
+                # For other languages
                 input_ids_lang[i] = torch.tensor(feature["input_ids_lang"])
                 attention_mask_lang[i] = torch.tensor(feature["attention_mask_lang"])
                 if (
@@ -118,11 +104,7 @@ class FactVerificationTransformer(BaseTransformer):
                         feature["token_type_ids_lang"]
                     )
 
-        if (
-            set_type in ["train", "dev"]
-            and hasattr(hparams, "compute_consistency_reg")
-            and hparams.compute_consistency_reg
-        ):
+        if set_type in ["train", "dev"] and hparams.model_name == "consistency":
             return [
                 input_ids,
                 attention_mask,
@@ -217,11 +199,7 @@ class FactVerificationTransformer(BaseTransformer):
                 if self.config.model_type in ["bert", "xlnet", "albert"]
                 else None
             )
-        if (
-            hasattr(self.hparams, "compute_consistency_reg")
-            and self.hparams.compute_consistency_reg
-            and len(batch) > 4
-        ):
+        if self.hparams.model_name == "consistency" and len(batch) > 4:
             inputs["input_ids_lang"] = batch[4]
             inputs["attention_mask_lang"] = batch[5]
             if self.config.model_type not in {"distilbert", "bart"}:
@@ -290,9 +268,8 @@ class FactVerificationTransformer(BaseTransformer):
     def predict_step(self, batch, batch_idx):
         inputs = self.build_inputs(batch)
         outputs = self(**inputs)
-        # return outputs.penultimate_layer.detach().cpu()
         probs = torch.softmax(outputs.logits, dim=-1)
-        return probs
+        return probs.detach().cpu().numpy()
 
     def validation_epoch_end(self, outputs):
         avg_loss = (

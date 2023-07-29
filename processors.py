@@ -4,8 +4,6 @@
 
 import io
 import jsonlines
-import re
-import unicodedata
 import numpy as np
 from transformers import InputExample, DataProcessor
 from functools import partial
@@ -54,7 +52,6 @@ def convert_example_to_features(
         inputs["attention_mask_lang"] = translated_inputs["attention_mask"]
         if "token_type_ids" in translated_inputs:
             inputs["token_type_ids_lang"] = translated_inputs["token_type_ids"]
-
     else:
         inputs = tokenizer.encode_plus(
             text_a,
@@ -128,43 +125,6 @@ def compute_metrics(probs, gold_labels):
     return {"acc": (gold_labels == pred_labels).mean()}
 
 
-def process_claim(text):
-    text = unicodedata.normalize("NFD", text)
-    text = re.sub(r" \-LSB\-.*?\-RSB\-", "", text)
-    text = re.sub(r"\-LRB\- \-RRB\- ", "", text)
-    text = re.sub(" -LRB-", " ( ", text)
-    text = re.sub("-RRB-", " )", text)
-    text = re.sub("--", "-", text)
-    text = re.sub("``", '"', text)
-    text = re.sub("''", '"', text)
-    return text
-
-
-def process_title(text):
-    text = unicodedata.normalize("NFD", text)
-    text = re.sub("_", " ", text)
-    text = re.sub(" -LRB-", " ( ", text)
-    text = re.sub("-RRB-", " )", text)
-    text = re.sub("-COLON-", ":", text)
-    return text
-
-
-def process_evidence(text):
-    text = unicodedata.normalize("NFD", text)
-    text = re.sub(" -LSB-.*-RSB-", " ", text)
-    text = re.sub(" -LRB- -RRB- ", " ", text)
-    text = re.sub("-LRB-", "(", text)
-    text = re.sub("-RRB-", ")", text)
-    text = re.sub("-COLON-", ":", text)
-    text = re.sub("_", " ", text)
-    text = re.sub(r"\( *\,? *\)", "", text)
-    text = re.sub(r"\( *[;,]", "(", text)
-    text = re.sub("--", "-", text)
-    text = re.sub("``", '"', text)
-    text = re.sub("''", '"', text)
-    return text
-
-
 class FactVerificationProcessor(DataProcessor):
     def get_labels(self):
         """See base class."""
@@ -180,18 +140,13 @@ class FactVerificationProcessor(DataProcessor):
         self, filepath, set_type, check_data, training=True, use_title=True
     ):
         examples = []
-        count = 0
         for (i, line) in enumerate(jsonlines.open(filepath)):
             guid = f"{set_type}-{i}"
-            if check_data:
-                claim = line["claim"]
-                evidence = line["evidence"]
-            else:
-                claim = process_claim(line["claim"])
-                evidence = process_evidence(line["evidence"])
+            claim = line["claim"]
+            evidence = line["evidence"]
 
             if use_title and "page" in line:
-                title = process_title(line["page"])
+                title = line["page"]
 
             if "label" in line:
                 label = line["label"][0]
@@ -201,9 +156,8 @@ class FactVerificationProcessor(DataProcessor):
             text_a = claim
             text_b = f"{title} : {evidence}" if use_title else evidence
 
-            if check_data:
-                if "[SEP]" not in text_a or "[SEP]" not in text_b:
-                    count += 1
+            if check_data and set_type == "train":
+                assert "[SEP]" in text_a and "[SEP]" in text_b
 
             examples.append(
                 InputExample(
@@ -213,7 +167,4 @@ class FactVerificationProcessor(DataProcessor):
                     label=label,
                 )
             )
-        if check_data:
-            print(f"Amount of skipped data: {count}")
-
         return examples
