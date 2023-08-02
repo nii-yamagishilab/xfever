@@ -1,4 +1,4 @@
-from print_tab_3 import LANGS, get_acc_ece, avg
+from print_mono_multi import LANGS, get_acc_ece, avg
 
 MAPP = {
     "-": "--",
