@@ -15,8 +15,8 @@ def print_row(reg):
         ("bert-base-multilingual-cased", "2e-5"),
         ("xlm-roberta-large", "5e-6"),
     ]
-    accs = []
     for pretrained, lr in pretrained_lrs:
+        accs = []
         for lang in LANGS:
             filename = (
                 f"{train}_{pretrained}_{lr}/{pretrained}-128-{lang}-out/eval.test.txt"
