@@ -1,5 +1,19 @@
 # XFEVER
 
+This is an implementation of our paper: [XFEVER: Exploring Fact Verification across Languages](https://aclanthology.org/#).
+If you find our code and/or models useful, please cite our paper:
+
+```bash
+@inproceedings{chang-2023-xfever,
+    title = "XFEVER: Exploring Fact Verification across Languages",
+    author = "Yi-Chen Chang and Canasai Kruengkrai and Junichi Yamagishi",
+    booktitle = "",
+    year = "2023",
+    url = "",
+    pages = "",
+}
+```
+
 ## Requirements
 
 The code is tested on Python 3.9 and PyTorch 1.12.1.
