@@ -9,7 +9,7 @@ python print_acc_ece.py bert-base-multilingual-cased acc
 echo "--"
 
 echo "% Table 5"
-python print_ablation.py
+python print_combine.py
 echo "--"
 
 echo "% Table 6"
@@ -20,10 +20,10 @@ echo "% Table 7"
 python print_machine_human.py
 echo "--"
 
-echo "% Table 9"
+echo "% Table 8"
 python print_acc_ece.py xlm-roberta-large acc
 echo "--"
 
-echo "% Table 10"
+echo "% Table 9"
 python print_acc_ece.py xlm-roberta-large ece
 echo "--"
