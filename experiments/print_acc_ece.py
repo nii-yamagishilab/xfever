@@ -4,7 +4,8 @@ from print_mono_multi import LANGS, get_acc_ece, avg
 MAPP = {
     "en": "Zero-shot $\\avgLossZ$     & -- & --",
     "mixed": "Non-parallel $\\avgLossNP$ & -- & --",
-    "para kl": "Parallel $\\avgLossP$ & Pred & $\\KL$",
+    "para": "Parallel $\\avgLossP$      & -- & --",
+    "para kl": "                     & Pred & $\\KL$",
     "para j": "                     &      & $\\J$",
     "para j-0.25": "                     &      & $\\J$",
     "para js": "                     &      & $\\JS$",
@@ -62,6 +63,7 @@ def main(pretrained: str, score: str):
     print("\\midrule")
     print_row(score, pretrained, lr, "en", None)
     print_row(score, pretrained, lr, "mixed", None)
+    print_row(score, pretrained, lr, "para", None)
     print_row(score, pretrained, lr, "para", "kl")
     print_row(score, pretrained, lr, "para", j)
     print_row(score, pretrained, lr, "para", "js")
