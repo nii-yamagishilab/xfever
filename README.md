@@ -6,6 +6,7 @@ If you find our code and/or models useful, please cite our paper:
 ```bash
 @inproceedings{chang-2023-xfever,
     title = "XFEVER: Exploring Fact Verification across Languages",
+    booktitle = "Proceedings of the 35th Conference on Computational Linguistics and Speech Processing (ROCLING 2023)",
     author = "Yi-Chen Chang and Canasai Kruengkrai and Junichi Yamagishi",
     year = "2023",
 }
