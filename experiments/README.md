@@ -1,4 +1,4 @@
-The model checkpoints, example outputs, and preprocessed data are available at https://zenodo.org/record/[PLACEHOLDER].
+The model checkpoints, example outputs, and preprocessed data are available at https://zenodo.org/records/8206962.
 
 ## Getting started with checkpoints
 
@@ -14,7 +14,7 @@ cd ..
 
 Then, download a model checkpoint and uncompress it:
 ```shell
-wget https://zenodo.org/record/[PLACEHOLDER]/files/mixed_bert-base-multilingual-cased_2e-5.tar.gz
+wget https://zenodo.org/records/8206962/files/mixed_bert-base-multilingual-cased_2e-5.tar.gz
 tar xvfz mixed_bert-base-multilingual-cased_2e-5.tar.gz
 ```
 
@@ -69,7 +69,7 @@ ACC: 85.4
 ECE: 4.2
 ```
 
-The above ACC and ECE scores correspond to the column "ja" in Tables 4 and 6 in [our paper](https://aclanthology.org/[PLACEHOLDER]).
+The above ACC and ECE scores correspond to the column "ja" in Tables 4 and 6 in our paper.
 
 
 ## Training, prediction, and evaluation
