@@ -4,7 +4,6 @@ This is an implementation of our paper: [XFEVER: Exploring Fact Verification acr
 If you find our code and/or models useful, please cite our paper:
 
 ```bash
-@inproceedings{chang-2023-xfever,
 @inproceedings{chang-etal-2023-xfever,
     title = "{XFEVER}: Exploring Fact Verification across Languages",
     author = "Chang, Yi-Chen  and
