@@ -69,7 +69,7 @@ ACC: 85.4
 ECE: 4.2
 ```
 
-The above ACC and ECE scores correspond to the column "ja" in Tables 4 and 6 in our paper.
+The above ACC and ECE scores correspond to the column "ja" in Tables 4 and 6 in [our paper](https://aclanthology.org/2023.rocling-1.1/).
 
 
 ## Training, prediction, and evaluation
@@ -124,4 +124,4 @@ ACC: 82.1
 ECE: 8.6
 
 ```
-The above ACC and ECE scores correspond to the row "Zero-shot $J_z$"  in Tables 4 and 6 in our paper.
+The above ACC and ECE scores correspond to the row "Zero-shot $J_z$" in Tables 4 and 6 in [our paper](https://aclanthology.org/2023.rocling-1.1/).
