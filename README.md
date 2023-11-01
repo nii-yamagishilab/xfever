@@ -1,13 +1,18 @@
 # XFEVER
 
-This is an implementation of our paper: [XFEVER: Exploring Fact Verification across Languages](https://aclanthology.org/#).
+This is an implementation of our paper: [XFEVER: Exploring Fact Verification across Languages](https://aclanthology.org/2023.rocling-1.1/).
 If you find our code and/or models useful, please cite our paper:
 
 ```bash
 @inproceedings{chang-2023-xfever,
-    title = "XFEVER: Exploring Fact Verification across Languages",
+@inproceedings{chang-etal-2023-xfever,
+    title = "{XFEVER}: Exploring Fact Verification across Languages",
+    author = "Chang, Yi-Chen  and
+      Kruengkrai, Canasai  and
+      Yamagishi, Junichi",
     booktitle = "Proceedings of the 35th Conference on Computational Linguistics and Speech Processing (ROCLING 2023)",
-    author = "Yi-Chen Chang and Canasai Kruengkrai and Junichi Yamagishi",
+    url = "https://aclanthology.org/2023.rocling-1.1",
+    pages = "1--11",
     year = "2023",
 }
 ```
